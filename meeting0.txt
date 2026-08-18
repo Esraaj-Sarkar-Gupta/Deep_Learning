@@ -2,4 +2,13 @@ Gautam says hello!
 
 Esraaj says hello too
 
-hi gay
+TESS DATASET:
+Most of the planets found are the size of earth
+Recently they found one the size of juoiter
+If theres a planet large enough, it bends space time
+Keywords: Lensing microlensing
+ROMAN is much narrower section
+
+KEPLER: models trained on Kepler was completely useless on TESS 
+There is work you can do 
+Eclipse binary star systems (also on the concept of lensing)
