@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cylinder wake EDA and PINN benchmark plan</title>
+<style>
+:root{color-scheme:light;--ink:#182e44;--muted:#486072;--accent:#176c67;--paper:#fff;--rule:#d6e3ea;--soft:#edf5f7}
+*{box-sizing:border-box}
+body{margin:0;background:#f2f6f8;color:var(--ink);font:16px/1.62 system-ui,Segoe UI,sans-serif}
+main{max-width:1090px;margin:auto;background:var(--paper);padding:46px clamp(20px,5vw,64px) 44px}
+h1,h2,h3{line-height:1.14;margin:0 0 .7em;letter-spacing:-.022em}
+h1{font-size:clamp(2.2rem,5vw,3.6rem);max-width:20ch;margin-bottom:.34em}
+h2{font-size:clamp(1.5rem,3.5vw,2.1rem);margin-top:1.4em}
+h3{font-size:1.2rem;margin-top:1.35em}
+p{margin:.65em 0 1em}
+.summary{border-left:4px solid var(--accent);padding:.15rem 1.3rem .85rem;background:var(--soft);margin:1.5rem 0}
+.summary h2{margin-top:.85em}
+.summary p:last-child{margin-bottom:0}
+nav{display:flex;flex-wrap:wrap;gap:.45rem 1.1rem;padding:.45rem 0 .9rem;border-bottom:1px solid var(--rule)}
+a{color:#075c78;text-underline-offset:.15em}
+section{scroll-margin-top:1rem}
+figure{margin:1.3rem 0 1.55rem;padding:.75rem .6rem;border:1px solid var(--rule);border-radius:8px}
+figure img{display:block;width:100%;height:auto}
+figcaption,.muted{color:var(--muted);font-size:.9em}
+figcaption{padding:.6em .75em .2em}
+.table{max-width:100%;overflow-x:auto;margin:1rem 0}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.91rem}
+th,td{text-align:left;vertical-align:top;padding:.53em .7em;border-bottom:1px solid var(--rule)}
+th{background:var(--soft);font-weight:650}
+td.num{white-space:nowrap}
+li{margin:.45em 0}
+pre{white-space:pre-wrap;background:#f1f6f8;padding:1em;font-size:.9rem;border-radius:6px;overflow-wrap:anywhere}
+code{font-family:Consolas,monospace}
+footer{margin-top:2em;padding-top:.75em;border-top:1px solid var(--rule)}
+@media print{body,main{background:#fff}main{padding:0}nav{display:none}figure,.table{break-inside:avoid}h2,h3{break-after:avoid}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>Cylinder wake EDA and PINN benchmark plan</h1>
+<p class="muted">Fixed circular cylinder at Re = 100 · 20 November 2026</p>
+</header>
+<section class="summary" aria-label="Executive summary">
+<h2>Executive summary</h2>
+<p><strong>Use this run to benchmark sparse reconstruction and hidden-pressure recovery.</strong> The supplied field window is a complete stationary-mesh CFD export with 16.66 million node-time records. The separate reaction log confirms a shedding period of <strong>6.066</strong> convective time units, while the field export covers just <strong>3.30 shedding cycles</strong>.</p>
+<p><strong>Start around the cylinder and its wake.</strong> The proposed crop holds 43,855 nodes, 52.9% of the export, in approximately 0.194% of the full-domain area by reconstructed nodal weights. Evaluate the near body and wake separately so that performance reflects the flow features of interest.</p>
+<p><strong>Reproduce the method comparison.</strong> The uploaded study compares a global PINN with sequential variants on plunging airfoils. Here, compare a global PINN with independently trained time slabs and slabs initialized from earlier weights. Use velocity as the only interior training label and align pressure to a declared gauge before scoring it.</p>
+</section>
+<nav aria-label="Report sections">
+<a href="#data">Data audit</a><a href="#fields">Fields and geometry</a><a href="#dynamics">Wake dynamics</a><a href="#baselines">Sparse baselines</a><a href="#physics">PINN specification</a><a href="#paper">Reference study</a><a href="#protocol">Evaluation plan</a><a href="#sources">Evidence</a>
+</nav>
+
+<section id="data">
+<h2>Data audit</h2>
+<div class="table" tabindex="0"><table><thead><tr><th>File</th><th>Shape and meaning</th><th>Validation</th></tr></thead><tbody><tr><td>fixed_cylinder_atRe100</td><td>201 × 82,872 = 16,657,272 node-times. Header Re = 100, Ur = 1,000,000. Columns x, y, u, v, p.</td><td>MD5 matches Zenodo.</td></tr><tr><td>Re100_fixe00.reactions</td><td>4,222 rows. Columns time, Fx, Fy, Mz, entity. One entity, CYLINDRE_FIXE.</td><td>MD5 matches Zenodo. Numeric fields finite and time strictly increasing.</td></tr><tr><td>text_flow.py and reactions_process.py</td><td>Publisher’s schema and processing examples.</td><td>Both script MD5s match Zenodo. The EDA uses a current-Python reader.</td></tr></tbody></table></div>
+<p>Every field block contains exactly 82,872 numeric five-column records. All values are finite, coordinates are unique within a frame, and the same coordinates appear in identical order across all 201 frames. Time increases strictly with Δt = 0.1 and the final block ends at EOF. A stable key is <code>(frame_index, node_index)</code>. Store <code>xy[N,2]</code> once, <code>t[T]</code> once, and <code>uvp[T,N,3]</code> separately. The latter is about 191 MiB as float32 before compression.</p>
+<p>The publisher identifies Cadyf and confirms a 2-D finite-element simulation. The companion paper defines x and y in D, time in D/U₀, velocity in U₀ and pressure in ρU₀². Extents and boundary values support that convention in the export. The <code>Ur</code> header is a reduced-velocity parameter associated with the structural model. The fixed-case value of 1,000,000 has no role as a feature or fluid speed in this benchmark. The export provides coordinates and nodal values, with no element connectivity, original time integration state or solver input deck. <a href="https://zenodo.org/records/5039610">Dataset record</a> · <a href="https://doi.org/10.1017/jfm.2021.252">Dataset methods, §3.1</a></p>
+</section>
+
+<section id="fields">
+<h2>Fields and geometry</h2>
+<figure><img src="mesh.png" width="1700" height="638" alt="Full domain and a magnified wake crop showing a dense mesh around the cylinder"><figcaption>The dashed line divides the near-body region from the wake at x = 1.5. Near body is x ∈ [−1.5, 1.5], |y| ≤ 2. Wake is x ∈ (1.5, 8], |y| ≤ 2. Wall nodes are profiled separately.</figcaption></figure>
+<div class="table" tabindex="0"><table><thead><tr><th>Field</th><th>Min</th><th>P01</th><th>Median</th><th>P99</th><th>Max</th><th>Nodal mean / SD</th><th>Area mean / SD</th></tr></thead><tbody><tr><td>u</td><td>-0.2344</td><td>-0.0982</td><td>0.9469</td><td>1.2455</td><td>1.3022</td><td>0.7927 / 0.3562</td><td>1.0000 / 0.0328</td></tr><tr><td>v</td><td>-0.6641</td><td>-0.5373</td><td>0.0000</td><td>0.5328</td><td>0.6643</td><td>0.0001 / 0.2091</td><td>0.0000 / 0.0208</td></tr><tr><td>p</td><td>-0.6525</td><td>-0.5469</td><td>-0.0356</td><td>0.4505</td><td>0.5408</td><td>-0.0904 / 0.1806</td><td>0.0011 / 0.0093</td></tr></tbody></table></div>
+<p>Full-domain nodal summaries weight each mesh node equally. Area summaries use lumped areas from a Delaunay triangulation with the cylinder hole masked. Region shares use those same weights by node membership, so the crop percentage is a quadrature approximation. For final regional scores, use clipped quadrature or a fixed area-uniform test grid outside the cylinder.</p>
+<div class="table" tabindex="0"><table><thead><tr><th>Region</th><th>Nodes</th><th>Nodal mean u / v / p</th><th>RMS of per-node temporal SD</th></tr></thead><tbody><tr><td>Cylinder wall</td><td>628</td><td>0.0000 / 0.0000 / -0.2419</td><td>0.0000 / 0.0000 / 0.0472</td></tr><tr><td>Near body</td><td>24,250</td><td>0.5447 / 0.0020 / -0.1899</td><td>0.0493 / 0.0642 / 0.0468</td></tr><tr><td>Wake</td><td>18,977</td><td>0.7848 / -0.0033 / -0.1114</td><td>0.1653 / 0.2861 / 0.0627</td></tr><tr><td>Outside crop, interior</td><td>38,853</td><td>0.9633 / 0.0005 / -0.0160</td><td>0.0539 / 0.1323 / 0.0185</td></tr><tr><td>Inlet</td><td>49</td><td>1.0000 / 0.0000 / 0.0065</td><td>0.0000 / 0.0000 / 0.0005</td></tr><tr><td>Outlet</td><td>33</td><td>0.9941 / 0.0000 / 0.0000</td><td>0.0003 / 0.0006 / 0.0002</td></tr><tr><td>Top</td><td>43</td><td>1.0031 / 0.0000 / 0.0018</td><td>0.0000 / 0.0000 / 0.0004</td></tr><tr><td>Bottom</td><td>43</td><td>1.0031 / 0.0000 / 0.0018</td><td>0.0000 / 0.0000 / 0.0004</td></tr></tbody></table></div><p>The full coordinate rectangle is [−40, 120] × [−60, 60]. The longest triangle edge ranges from 0.0047 to 7.13 D across triangles, with median 0.052 D. Inlet vectors are exactly (1, 0) and v is exactly zero on both lateral boundaries across the export. Outer-edge counts share corner nodes. The outlet velocity varies over the edge and in time.</p>
+<figure><img src="fields.png" width="2031" height="861" alt="Maps of velocity, pressure, vorticity, and temporal variation near the cylinder and wake"><figcaption>Snapshot at t = 408, with temporal standard deviations over all 201 frames. Colors are clipped at the displayed scales. Vorticity is reconstructed from piecewise-linear velocity gradients on the inferred mesh.</figcaption></figure>
+<p>Reverse streamwise flow occupies 5.48–6.08% of nodes per snapshot but about 0.005–0.005% of full-domain area. Mean near-centerline reverse flow is present at sampled nodes from x = 0.504 to 1.899. Mean wall p at the extreme upstream and downstream nodes is 0.540 and -0.349, a difference of 0.889. This is a sampled sign check in |y| &lt; 0.025. A separation or reattachment measurement would require a continuous wall or centerline interpolation.</p>
+<p><strong>Boundary geometry.</strong> The 628 exact no-slip nodes comprise 314 near the ideal radius 0.5 and 314 near radius 0.499975, consistent with edge midpoints on a polygonal boundary. Use all exported wall coordinates for data checks. For analytic collocation, exclude r ≤ 0.5 and sample a distinct exact-circle wall condition. Keep a small buffer if evaluating numerical derivatives against the nodal export. The inferred mesh is suitable for plots and first-derivative checks. It does not supply the original finite-element operators.</p>
+</section>
+
+<section id="dynamics">
+<h2>Wake dynamics and reaction alignment</h2>
+<div class="table" tabindex="0"><table><thead><tr><th>Diagnostic</th><th>Observation</th><th>Use</th></tr></thead><tbody><tr><td>Field time coverage</td><td>400 to 420 at Δt = 0.1</td><td>Dense reference for omitting frames deliberately.</td></tr><tr><td>Reaction time coverage</td><td>0.0001 to 500.03315. Median step 0.1115 overall.</td><td>Separate solver clock. Early samples include a startup impulse.</td></tr><tr><td>Overlap</td><td>179 reaction records. Zero exact matches. Worst nearest offset 0.0557.</td><td>Interpolate the reaction log to the field time grid. The log brackets both endpoints.</td></tr><tr><td>Lift shedding</td><td>Period 6.0664, St 0.16484.</td><td>The transverse force and centerline v probes peak near the fundamental.</td></tr><tr><td>Drag oscillation</td><td>Period 3.0332, frequency 0.32969.</td><td>About twice the lift frequency. Centerline u and p also peak near this harmonic.</td></tr><tr><td>Aligned reactions</td><td>Mean Fx 0.66468, SD 0.00320. Mean Fy -0.00864, SD 0.11382, range [-0.16193, 0.16194].</td><td>Window mean of Fy depends on the endpoints and includes fractional cycles.</td></tr></tbody></table></div>
+<figure><img src="dynamics.png" width="1800" height="948" alt="Overlapping reaction histories, wake spectrum and crossflow probes"><figcaption>The reaction spectrum uses the available late record, t ≥ 400. Each spectrum is normalized to its own peak. Wall traction uses pressure quadrature and linear-triangle velocity gradients. The four velocity traces use the nearest actual nodes to the labeled locations.</figcaption></figure>
+<p>Estimate shedding frequency from the median interval between quadratically refined transverse-force peaks over the late reaction record. There are 60.7 saved field steps per period, so the original field data resolves the shedding fundamental well. Probe spectra come from a short 10-unit window. Their peak locations can shift with windowing, harmonics and phase, and zero padding only refines the frequency grid. For an evenly sampled signal, a 3.03-unit cadence is the nominal Nyquist boundary for the fundamental, and 1.52 units is the boundary for the second harmonic. Stable waveform reconstruction benefits from a finer cadence. Use the reaction log as the measured reference for shedding frequency. For held-out forecasting, estimate any period supplied to a model from the training portion only.</p>
+<div class="table" tabindex="0"><table><thead><tr><th>Target (x, y)</th><th>Nearest node (x, y)</th><th>Temporal SD u / v / p</th><th>Spectral peak u / v / p</th></tr></thead><tbody><tr><td>(1, 0.5)</td><td>(0.992, 0.503)</td><td>0.1319 / 0.1204 / 0.0945</td><td>0.1648 / 0.1651 / 0.1648</td></tr><tr><td>(2, 0)</td><td>(1.996, 0.004)</td><td>0.0748 / 0.3878 / 0.0430</td><td>0.3296 / 0.1648 / 0.3296</td></tr><tr><td>(4, 0)</td><td>(3.996, -0.009)</td><td>0.0819 / 0.4367 / 0.0345</td><td>0.3296 / 0.1648 / 0.3296</td></tr><tr><td>(6, 1)</td><td>(6.008, 1.019)</td><td>0.1597 / 0.2836 / 0.0505</td><td>0.1648 / 0.1648 / 0.1651</td></tr><tr><td>(8, 0)</td><td>(7.99, -0.009)</td><td>0.0452 / 0.3651 / 0.0233</td><td>0.3296 / 0.1648 / 0.3296</td></tr><tr><td>(-2, 0)</td><td>(-1.992, -0.011)</td><td>0.0000 / 0.0046 / 0.0002</td><td>0.1648 / 0.1648 / 0.3296</td></tr></tbody></table></div>
+<p>Forces are auxiliary ground truth. Use the fixed-cylinder stress integral with outward solid normal and report pressure and viscous contributions separately. The source uses ρU₀²D as the force scale per unit span. Conventional C<sub>D</sub> and C<sub>L</sub> use one half of that denominator, so the multiplier is two if the exported forces follow the documented scale. The measured traction agreement below supports that interpretation. Torque is retained in exported units.</p>
+<p>Mean reconstructed Fx is 0.66297, of which 0.49450 is pressure and 0.16847 is viscous stress. Across all field times the traction RMSE was 0.00172 for Fx and 0.00030 for Fy, and both waveform correlations exceed 0.99999. This gives mean C<sub>D</sub> ≈ 1.329 and peak |C<sub>L</sub>| ≈ 0.324 under the documented scaling.</p>
+</section>
+
+<section id="baselines">
+<h2>What sparse sampling changes</h2>
+<div class="table" tabindex="0"><table><thead><tr><th>Sensors</th><th>Layout</th><th>Mean near-body sites</th><th>Mean P95 distance (D)</th><th>Spatial L² u / v (%)</th><th>Joint L² u / v (%)</th></tr></thead><tbody><tr><td>64</td><td>Random nodes</td><td>34.7</td><td>0.890</td><td>21.12 / 56.32</td><td>21.09 / 56.19</td></tr><tr><td>64</td><td>Balanced 0.5D bins</td><td>19.3</td><td>0.680</td><td>16.84 / 40.61</td><td>16.86 / 40.93</td></tr><tr><td>256</td><td>Random nodes</td><td>146.0</td><td>0.453</td><td>9.71 / 26.60</td><td>9.73 / 26.89</td></tr><tr><td>256</td><td>Balanced 0.5D bins</td><td>83.7</td><td>0.302</td><td>8.02 / 16.07</td><td>8.09 / 17.25</td></tr><tr><td>1024</td><td>Random nodes</td><td>588.0</td><td>0.221</td><td>3.75 / 11.60</td><td>3.83 / 12.62</td></tr><tr><td>1024</td><td>Balanced 0.5D bins</td><td>322.7</td><td>0.174</td><td>4.86 / 9.45</td><td>4.94 / 10.77</td></tr></tbody></table></div><p>At 256 sensors, balancing lowered the P95 sensor distance from 0.453 D to 0.302 D and lowered crossflow error at unseen sites and times from 26.9% to 17.3%. At 1,024, streamwise error was lower with random nodes. This supports testing a mixed layout with extra capacity near the wall.</p>
+<p>Spatial IDW uses six nearest candidates, inverse squared distance and cylinder occlusion where a clear neighbor exists. It observes u and v at 41 frames spaced 0.5 time units apart. Spatial error uses those frames. Joint error uses the same off-sensor sites at the 160 omitted frames, with linear interpolation between the spatial predictions. Three seeded experiments each use 2,000 permanently held-out sites, with identical holdouts across layouts within a seed. The area weights are renormalized on those sites. Uniform-node sampling reflects the meshing pattern. Spatial balancing covers more of the crop but changes the allocation close to the body, so use region-specific scores when designing sensors.</p>
+<div class="table" tabindex="0"><table><thead><tr><th>Nominal gap</th><th>Gap / shedding period</th><th>Observed / omitted frames</th><th>Relative L² u / v / p (%)</th></tr></thead><tbody><tr><td>0.20</td><td>0.033</td><td>101 / 100</td><td>0.14 / 0.93 / 0.32</td></tr><tr><td>0.30</td><td>0.049</td><td>68 / 133</td><td>0.28 / 1.84 / 0.64</td></tr><tr><td>0.50</td><td>0.082</td><td>41 / 160</td><td>0.69 / 4.56 / 1.60</td></tr><tr><td>1.00</td><td>0.165</td><td>21 / 180</td><td>2.32 / 15.13 / 5.48</td></tr><tr><td>1.50</td><td>0.247</td><td>15 / 186</td><td>4.38 / 27.80 / 10.46</td></tr><tr><td>2.00</td><td>0.330</td><td>11 / 190</td><td>6.72 / 41.36 / 16.09</td></tr><tr><td>3.00</td><td>0.495</td><td>8 / 193</td><td>10.98 / 67.75 / 25.71</td></tr></tbody></table></div>
+<figure><img src="diagnostics.png" width="1754" height="576" alt="Temporal interpolation error by observation gap and divergence estimates over time"><figcaption>Left, area-weighted errors at omitted times when all crop nodes are available at observed times, including pressure in this diagnostic. The final interval may be shorter than the nominal gap. Right, divergence calculated from linear triangle gradients every fifth snapshot.</figcaption></figure>
+<p>Median snapshot divergence RMS is 0.0027 across the full domain and 0.0128 in the crop. Across sampled snapshots a median 37.1% of crop triangles reach |ω| ≥ 1 by triangle count. A cutoff copied from the reference paper would therefore select a substantial share of this mesh. A nonzero estimate includes discretization, reconstructed connectivity and gradient approximation. Use it as a comparison of scales. For the PINN, check automatic-differentiation residuals independently on unseen collocation points, and avoid computing a Laplacian from piecewise-linear interpolation.</p>
+<div class="table" tabindex="0"><table><thead><tr><th>Dense-space extrapolation baseline</th><th>Relative L² u / v / p (%)</th></tr></thead><tbody><tr><td>Train-time mean</td><td>14.40 / 91.32 / 31.10</td></tr><tr><td>1 harmonics</td><td>4.39 / 25.03 / 11.73</td></tr><tr><td>3 harmonics</td><td>2.58 / 16.19 / 5.85</td></tr><tr><td>5 harmonics</td><td>2.53 / 15.87 / 5.75</td></tr></tbody></table></div><p>Training-probe fit frequency 0.16695. As a separate, non-causal repeatability check, comparing fields one reaction-derived period apart gives relative differences of 0.032 / 0.210 / 0.073% for u / v / p, including the error from linear time alignment. This establishes a strong periodic comparison for this one run.</p>
+<p>The harmonic diagnostic sees dense fields in space through t = 406 and is scored at t ≥ 408. This diagnostic has its own cutoffs. Its frequency comes only from the training-era crossflow at the probe nearest (4, 0). The pressure baseline uses training p, so it serves as a periodic-oracle comparison for hidden-pressure recovery. A fair sparse velocity baseline uses exactly the PINN’s training sites and observation times.</p>
+</section>
+
+<section id="physics">
+<h2>Fixed-cylinder PINN specification</h2>
+<p>Use a smooth network mapping (x, y, t) to (u, v, p). With the dataset scaling and ν* = 0.01, minimize the three residuals below on the fluid region.</p>
+<pre>rᵤ = uₜ + u uₓ + v uᵧ + pₓ − 0.01 (uₓₓ + uᵧᵧ)
+rᵥ = vₜ + u vₓ + v vᵧ + pᵧ − 0.01 (vₓₓ + vᵧᵧ)
+r꜀ = uₓ + vᵧ</pre>
+<ul>
+<li><strong>Loss terms.</strong> Fit sparse observations of both velocity components, add no-slip velocity on the stationary wall, and add the three physics terms with independently tracked scales. Begin with a tanh model such as 8 layers × 96 units as an engineering starting point. Scale inputs and center time, then differentiate with respect to physical nondimensional coordinates via automatic differentiation through the scaling or explicit chain-rule factors.</li>
+<li><strong>Actual outer boundary.</strong> The companion study documents uniform inlet velocity, homogeneous Neumann velocity at the outlet, symmetry top and bottom, and no slip at the cylinder. Check those against the export before applying them. Use published or verified BCs at the full-domain edges. A crop has artificial outer faces, where you can use a declared budget of measured traces or leave faces unconstrained in a separate sensitivity experiment. Avoid applying the full-domain inlet or outlet conditions at the crop edges. <a href="https://doi.org/10.1017/jfm.2021.252">Dataset methods, §3.1</a></li>
+<li><strong>Pressure gauge.</strong> Momentum uses ∇p, leaving a free spatial constant c(t) at every time. For velocity-only reconstruction, enforce a zero gauge at one declared fluid location or zero mean over a fixed reference set at each time. At evaluation, apply the same operator to predicted and reference pressure. If using a test-frame least-squares offset for a secondary score, disclose it as gauge-aligned shape error. Report pressure differences and drag/lift as gauge-invariant checks. The spatial mean at the exported outlet varies from -1.5e-05 to 5.3e-05. Individual outlet nodes are finite and vary, so treat the mean as evidence about the gauge only.</li>
+<li><strong>Collocation.</strong> Sample inside the fluid, deliberately mixing near-wall annulus, shear layers and wake with broader coverage. Start with approximately 20k–50k geometry-based collocation points per slab, resampled or minibatched as needed, and reserve independent points for residual reporting. Dense collocation in time supplies the PDE only. It does not increase the cadence of labeled velocities.</li>
+<li><strong>Data scales.</strong> Report the data and physics losses separately. Fit any scaling or sampling proxies using allowed training data. Consider component-scaled velocity loss given the larger streamwise mean. Preserve output scaling inside the physics residual. Keep initial full-field labels, outlet pressure labels, and reactions out of the primary velocity-only fit.</li>
+</ul>
+</section>
+
+<section id="paper">
+<h2>How the reference study maps to this project</h2>
+<p>Sundar, Lucor and Sarkar used a moving-boundary PINN for a periodic plunging foil at Re = 500 and a quasi-periodic case at Re = 300. Velocity training and high-resolution velocity validation use IBM data. The separate ALE reference supplies pressure for testing. Their loss combines sparse velocity, inlet, moving no-slip and fluid-only physics. In our dataset, the wall is stationary and the field and pressure targets share the same Cadyf simulation. <a href="../Esraaj%20Mom%20paper.pdf">Uploaded paper, §§2–3</a> · <a href="https://arxiv.org/abs/2503.15679">Preprint record</a></p>
+<div class="table" tabindex="0"><table>
+<thead><tr><th>Reference experiment</th><th>Published setup or finding</th><th>Cylinder adaptation</th></tr></thead>
+<tbody>
+<tr><td>Global PINN under temporal sparsity</td><td>§4.1 varies bulk cadence and compares against linear interpolation and a feedforward network.</td><td>Compare matched sparse-observation IDW/FNN with a global PINN across observation gaps scaled by the measured shedding period.</td></tr>
+<tr><td>Two-period sequential comparison</td><td>Tables 5–6 report crossflow rRMSE of 11.07% for global M0 and 8.29% for M2TD+TL (100 × 10), with pressure at 21.74% and 20.19%.</td><td>Compare the same model categories on one observed wake sequence. Use the published figures as reference results from the foil.</td></tr>
+<tr><td>Long temporal domain</td><td>Tables 7–8 use 10 plunging cycles in five two-cycle segments. At 100 × 10, the reported global versus transfer-learning values are 9.86% versus 1.41% for v and 36.25% versus 6.66% for p.</td><td>Use a two-slab pilot on the available export. The export also supports a three-slab sensitivity case at about one shedding period per slab. A 10-cycle replication requires a longer field export at comparable cadence, roughly 60 time units here.</td></tr>
+<tr><td>Preferential spatio-temporal sampling</td><td>§5 and Table 10 combine vorticity selection with finer measurement cadence near the foil than in the wake.</td><td>Start with geometry-balanced sensors, then compare near-body versus wake cadence at equal label budgets. Label full-field vorticity selection as an oracle if it uses data unavailable to the sparse-observation setting.</td></tr>
+</tbody></table></div>
+<p>In §2.4 the paper uses Adam with 10⁻³, 5×10⁻⁴ and 10⁻⁴ stages and describes a fixed 1.5M-iteration training budget. For the pilot, record aggregate optimizer steps, collocation samples processed, parameter count and wall time. Compare once at matched aggregate compute, then optionally at matched per-network capacity. Table 8 prints one MAE larger than its RMSE in the M2TD+TL row, so the table above uses the paper’s reported rRMSE only. <a href="../Esraaj%20Mom%20paper.pdf">Uploaded paper, §§2.4, 4–5 and Tables 5–8, 10</a></p>
+</section>
+
+<section id="protocol">
+<h2>Evaluation plan</h2>
+<ol>
+<li><strong>Freeze the benchmark.</strong> Declare the crop, wall mask, seed list, pressure gauge, reference units and purpose of every observation. Use fixed sensor IDs throughout a run. Reserve a spatially stratified set of off-sensor nodes across all times and reserve contiguous spatial patches to distinguish interpolation from filling an uninstrumented region.</li>
+<li><strong>Run interpolation first.</strong> With 256 sites, observe t = 400, 400.5, …, 420, which gives 10,496 labeled velocity pairs before any boundary labels. Evaluate at held-out sites both at observed and omitted times, with results for each group. Add a separate interior gap, such as withholding every bulk frame with t ∈ [408, 409], with training labels on both sides. Run 64 and 1,024 sites as spatial budget checks and Δt<sub>obs</sub> = 0.2, 0.5, 1.5 and 3.0 as cadence checks. Include near-wall probes and downstream wake coverage before tightening the budget.</li>
+<li><strong>Compare time slabs.</strong> Fit a global model, two independently initialized slabs and the same two slabs with transfer initialization. Try [400, 410.5] and [409.5, 420], giving 1.0 of overlap. Use the same label IDs and same boundary access. Count overlapping samples in the compute budget. Match pressure gauges across slabs and measure velocity and pressure jumps at the join. Any overlap consistency objective uses model predictions in the training region only. Keep the evaluation truth entirely outside loss and model selection.</li>
+<li><strong>Score temporal extrapolation separately.</strong> Train with t ≤ 412, select settings using t ∈ (412, 414), and evaluate once at t ≥ 414. Apply the same restriction to normalization, period fitting, sensor decisions and transfer initialization. If the forecast uses collocation, boundary conditions or an interface in the test horizon, describe it as physics-informed extrapolation and declare that access. The same short wake sequence can test phase prediction within a run. Cross-run or cross-Re generalization needs independent CFD.</li>
+<li><strong>Report per-component and regional skill.</strong> Give RMSE, MAE, R² and relative L² for u, v and gauge-aligned p. Define relative L² as 100‖prediction − truth‖₂/‖truth‖₂ using declared area/time weights. Also score u fluctuations about the training mean, maximum near-wall velocity error, pressure differences across the cylinder, vorticity from AD, area-weighted divergence and momentum residuals, and the force waveform, mean, amplitude and phase. Include per-time errors and performance across seeds. For shedding-frequency claims, compare a sufficiently long predicted rollout to the reaction reference or report uncertainty from the short window. Record node-weighted and area-weighted results so the weighting choice is visible.</li>
+</ol>
+</section>
+
+<footer id="sources">
+<h2>Evidence and reproducibility</h2>
+<ul>
+<li><a href="../fixed_cylinder_atRe100">Local field export</a> and <a href="../Re100_fixe00.reactions">local reaction export</a>. <a href="https://zenodo.org/records/5039610">Boudina dataset and published MD5 values</a>.</li>
+<li><a href="../Esraaj%20Mom%20paper.pdf">Uploaded Sundar, Lucor and Sarkar preprint</a>. <a href="https://arxiv.org/abs/2503.15679">Public preprint record</a>.</li>
+<li><a href="https://doi.org/10.1017/jfm.2021.252">Boudina, Gosselin and Étienne, solver methods and nondimensionalization</a>.</li>
+<li><a href="analyze.py">Reproducible Python analysis</a>, <a href="metrics.json">full metric tables and audit details</a>, and <a href="snapshot_diagnostics.csv">per-frame diagnostics and aligned forces</a>. Run <code>python cylinder_eda/analyze.py</code> with NumPy and Matplotlib from the project directory. The parser is tailored to the exact fixed-width export format.</li>
+</ul>
+</footer>
+</main>
+</body>
+</html>
+
