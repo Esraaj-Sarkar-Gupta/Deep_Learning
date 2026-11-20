@@ -1,0 +1,2 @@
+experiment,label,snapshot_time,optimizer_steps,u_rmse,v_rmse,pressure_gauge_aligned_rmse,u_relative_l2_percent,v_relative_l2_percent,pressure_relative_l2_percent
+plain,short local pilot,410.0,150,0.4929080307483673,0.25829049944877625,0.2243192493915558,64.06507873535156,99.86245727539062,81.83544158935547

@@ -1,0 +1,26 @@
+{
+  "components": [
+    "u",
+    "v",
+    "pressure_gauge_aligned"
+  ],
+  "rmse": [
+    0.5025858879089355,
+    0.4117184281349182,
+    0.1627112478017807
+  ],
+  "relative_l2_percent": [
+    103.92229461669922,
+    96.82774353027344,
+    63.333106994628906
+  ],
+  "snapshot_time": 0.5,
+  "held_out_nodes": 56,
+  "steps_per_segment": 3,
+  "segments": 1,
+  "total_optimizer_steps": 3,
+  "elapsed_training_seconds": 0.09081319998949766,
+  "label": "smoke test",
+  "device": "cpu",
+  "pressure_alignment": "held-out snapshot mean offset, evaluation only"
+}

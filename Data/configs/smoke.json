@@ -1,0 +1,1 @@
+﻿{"label":"smoke test","seed":42,"width":24,"lr":0.001,"batch":32,"collocation":24,"physics_weight":1.0,"steps":3,"segments":2,"checkpoint_every":1}

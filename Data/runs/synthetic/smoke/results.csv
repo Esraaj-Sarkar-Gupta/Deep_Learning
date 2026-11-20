@@ -1,0 +1,2 @@
+experiment,label,snapshot_time,optimizer_steps,u_rmse,v_rmse,pressure_gauge_aligned_rmse,u_relative_l2_percent,v_relative_l2_percent,pressure_relative_l2_percent
+plain,smoke test,0.5,3,0.4825400114059448,0.43444374203681946,0.16189320385456085,99.77730560302734,102.1722640991211,63.01469802856445

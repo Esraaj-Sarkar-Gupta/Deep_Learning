@@ -1,0 +1,19 @@
+{
+  "method": "linear Delaunay; nearest outside convex hull",
+  "scope": "all snapshots and non-sensor nodes",
+  "held_out_nodes": 82808,
+  "snapshots": 201,
+  "inside_hull_fraction": 1.0,
+  "components": [
+    "u",
+    "v"
+  ],
+  "rmse": [
+    0.370829394240903,
+    0.2926121803945509
+  ],
+  "relative_l2_percent": [
+    42.67520901322633,
+    139.8945310745233
+  ]
+}

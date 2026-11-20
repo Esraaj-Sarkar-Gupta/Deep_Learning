@@ -1,0 +1,27 @@
+{
+  "field_md5": "3613a6b45fdb59d8e42d33012f7e7d61",
+  "reynolds": 100.0,
+  "frames": 7,
+  "nodes": 120,
+  "time": [
+    0.0,
+    1.0
+  ],
+  "extent": [
+    -1.0,
+    1.0,
+    -1.0,
+    1.0
+  ],
+  "field_min": [
+    -0.837996244,
+    -0.836282074,
+    -0.489731669
+  ],
+  "field_max": [
+    0.837996244,
+    0.836282074,
+    0.208073407
+  ],
+  "force_evaluation": "skipped; supply --reaction-path"
+}

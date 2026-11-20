@@ -1,0 +1,26 @@
+{
+  "components": [
+    "u",
+    "v",
+    "pressure_gauge_aligned"
+  ],
+  "rmse": [
+    0.4929080307483673,
+    0.25829049944877625,
+    0.2243192493915558
+  ],
+  "relative_l2_percent": [
+    64.06507873535156,
+    99.86245727539062,
+    81.83544158935547
+  ],
+  "snapshot_time": 410.0,
+  "held_out_nodes": 43791,
+  "steps_per_segment": 150,
+  "segments": 1,
+  "total_optimizer_steps": 150,
+  "elapsed_training_seconds": 3.6265925001353025,
+  "label": "short local pilot",
+  "device": "cpu",
+  "pressure_alignment": "held-out snapshot mean offset, evaluation only"
+}
