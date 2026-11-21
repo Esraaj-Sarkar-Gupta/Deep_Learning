@@ -1,0 +1,70 @@
+## Core LaTeX auxiliary & build files
+*.aux
+*.lof
+*.log
+*.lot
+*.fls
+*.out
+*.toc
+*.fmt
+*.fot
+*.cb
+*.cb2
+.*.lb
+
+## Intermediate DVI / PS / build artifacts
+*.dvi
+*.xdv
+*-converted-to.*
+
+## Bibliography & Indexing (BibTeX, Biber, makeindex, glossaries)
+*.bbl
+*.bcf
+*.blg
+*-blx.aux
+*-blx.bib
+*.run.xml
+*.idx
+*.ilg
+*.ind
+*.ist
+*.glo
+*.gls
+*.glg
+*.acn
+*.acr
+*.alg
+*.nlo
+*.nls
+
+## Beamer presentation files
+*.nav
+*.snm
+*.vrb
+
+## SyncTeX & build tools (latexmk, arara, TeXstudio, etc.)
+*.synctex
+*.synctex(busy)
+*.synctex.gz
+*.synctex.gz(busy)
+*.pdfsync
+*.fdb_latexmk
+*.makefile
+*.fls
+*.upa
+*.upb
+
+## Externalized TikZ / PGFPlots / minted / pythontex caches
+*.dpth
+*.md5
+*.auxlock
+_minted*/
+*.pytxcode
+pythontex-files-*/
+
+## Common build output directories (uncomment if you use a build folder)
+# build/
+# out/
+
+## Uncomment the line below if you do NOT want to track compiled PDFs in Git
+# *.pdf
