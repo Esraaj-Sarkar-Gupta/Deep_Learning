@@ -1,0 +1,1 @@
+﻿{"label":"overnight pilot","seed":42,"width":64,"lr":0.001,"batch":512,"collocation":512,"physics_weight":1.0,"steps":10000,"segments":4,"checkpoint_every":250}

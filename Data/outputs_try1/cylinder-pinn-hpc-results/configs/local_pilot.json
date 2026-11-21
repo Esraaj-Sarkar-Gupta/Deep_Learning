@@ -1,0 +1,1 @@
+﻿{"label":"short local pilot","seed":42,"width":32,"lr":0.001,"batch":128,"collocation":96,"physics_weight":1.0,"steps":150,"segments":2,"checkpoint_every":25}

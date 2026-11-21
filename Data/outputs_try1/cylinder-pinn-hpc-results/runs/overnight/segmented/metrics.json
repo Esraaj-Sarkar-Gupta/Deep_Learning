@@ -1,0 +1,26 @@
+{
+  "components": [
+    "u",
+    "v",
+    "pressure_gauge_aligned"
+  ],
+  "rmse": [
+    0.1350458711385727,
+    0.09014169126749039,
+    0.09902635961771011
+  ],
+  "relative_l2_percent": [
+    17.552412033081055,
+    34.851341247558594,
+    36.12648391723633
+  ],
+  "snapshot_time": 410.0,
+  "held_out_nodes": 43791,
+  "steps_per_segment": 10000,
+  "segments": 4,
+  "total_optimizer_steps": 40000,
+  "elapsed_training_seconds": 271.72893402166665,
+  "label": "overnight pilot",
+  "device": "cuda",
+  "pressure_alignment": "held-out snapshot mean offset, evaluation only"
+}
