@@ -4,12 +4,12 @@ The Slurm job has **not** been submitted. The current real-data result is a shor
 
 ## Transfer
 
-Transfer `train.py`, `configs/`, `scripts/train.slurm`, `tests/smoke.py`, `prepared/cylinder_crop.npz`, and `runs/real/sensors.npz`. Optionally transfer `runs/real/results.csv`, `runs/real/plain/metrics.json`, `runs/real/plain/snapshot.png`, and `runs/real/interpolation.json` to retain local results. The synthetic outputs in `runs/synthetic/` are test artifacts and need not be transferred. Do not reuse the local pilot checkpoint with the overnight configuration: checkpoint configuration must match.
+Transfer `train.py`, `configs/`, `scripts/train.slurm`, `tests/smoke.py`, `../Data/prepared/cylinder_crop.npz`, and `runs/real/sensors.npz`. Put the crop in `prepared/` on the cluster as shown below. Optionally transfer `runs/real/results.csv`, `runs/real/plain/metrics.json`, `runs/real/plain/snapshot.png`, and `runs/real/interpolation.json` to retain local results. The synthetic outputs in `runs/synthetic/` are test artifacts and need not be transferred. Do not reuse the local pilot checkpoint with the overnight configuration: checkpoint configuration must match.
 
 Transfer the **prepared crop**, not the 1.16 GB raw export, for overnight training. It contains all 201 times and nodes in x=[-1.5,8], y=[-2,2]; it was created by:
 
 ```bash
-python train.py prepare --data-path /path/to/fixed_cylinder_atRe100 --output prepared/cylinder_crop.npz --crop -1.5 8 -2 2
+python train.py prepare --data-path ../Data/fixed_cylinder_atRe100 --output ../Data/prepared/cylinder_crop.npz --crop -1.5 8 -2 2
 ```
 
 To repeat full-domain interpolation or the original EDA, also transfer the raw field export. The separate reaction file is only needed for the EDA's optional force evaluation. The crop is derived from the raw export; keep the original safely available.
@@ -18,7 +18,7 @@ From a shell with SSH access, for example (replace the local and remote placehol
 
 ```bash
 ssh USER@LOGIN 'mkdir -p /REMOTE/PROJECT/configs /REMOTE/PROJECT/scripts /REMOTE/PROJECT/tests /REMOTE/PROJECT/prepared /REMOTE/PROJECT/runs/real'
-rsync -av train.py configs scripts tests prepared/cylinder_crop.npz USER@LOGIN:/REMOTE/PROJECT/
+rsync -av train.py configs scripts tests ../Data/prepared/cylinder_crop.npz USER@LOGIN:/REMOTE/PROJECT/
 # The previous rsync puts cylinder_crop.npz in the project root; place it in prepared/:
 ssh USER@LOGIN 'mv /REMOTE/PROJECT/cylinder_crop.npz /REMOTE/PROJECT/prepared/'
 rsync -av runs/real/sensors.npz USER@LOGIN:/REMOTE/PROJECT/runs/real/
@@ -40,7 +40,7 @@ python train.py verify --data-path prepared/cylinder_crop.npz --run-dir runs/rea
 python tests/smoke.py
 ```
 
-Verification should show `(201, 43855, 3)`, Re 100, time 400–420 and 64 sensors. `verify` checks array shape and finite field values, and validates the saved sensor-coordinate signature. For byte-for-byte transfer verification, compare `Get-FileHash prepared/cylinder_crop.npz -Algorithm SHA256` in local PowerShell with `sha256sum prepared/cylinder_crop.npz` on the cluster. `torch.cuda.is_available()` may be false on a login node; check it inside a GPU allocation.
+Verification should show `(201, 43855, 3)`, Re 100, time 400–420 and 64 sensors. `verify` checks array shape and finite field values, and validates the saved sensor-coordinate signature. For byte-for-byte transfer verification, compare `Get-FileHash ../Data/prepared/cylinder_crop.npz -Algorithm SHA256` in local PowerShell with `sha256sum prepared/cylinder_crop.npz` on the cluster. `torch.cuda.is_available()` may be false on a login node; check it inside a GPU allocation.
 
 ## Submit and monitor
 
