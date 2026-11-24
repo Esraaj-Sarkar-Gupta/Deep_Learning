@@ -1,4 +1,4 @@
-﻿"""Reproduce the cylinder-wake EDA from the supplied text exports.
+"""Reproduce the cylinder-wake EDA from the supplied text exports.
 
 Run from any directory with Python, NumPy, and Matplotlib:
     python cylinder_eda/analyze.py
@@ -15,7 +15,7 @@ import matplotlib.tri as mtri
 import numpy as np
 
 OUT = Path(__file__).resolve().parent
-ROOT = OUT.parent
+ROOT = OUT.parent / "Data".parent / "Data"
 COLORS = ["#174e83", "#b44a35", "#188275"]
 
 
@@ -425,22 +425,22 @@ def main():
     save(fig, "fields.png")
 
     fig, axes = plt.subplots(2, 2, figsize=(11.5, 6), layout="constrained")
-    for j, (ax, name, force) in enumerate(zip(axes[:, 0], ("Streamwise reaction Fₓ", "Transverse reaction Fᵧ"), (fx, fy))):
+    for j, (ax, name, force) in enumerate(zip(axes[:, 0], ("Streamwise reaction F?", "Transverse reaction F?"), (fx, fy))):
         ax.plot(tr[overlap], force[overlap], color=COLORS[j], label="Recorded reaction")
         ax.plot(t, estimated_force[:, j], ls="--", color="#354654", lw=1, label="Estimated wall traction")
-        ax.set(title=name, xlabel="t U∞ / D", ylabel="Exported units")
+        ax.set(title=name, xlabel="t U8 / D", ylabel="Exported units")
         ax.grid()
         ax.legend(frameon=False, fontsize=8)
-    for j, (name, force) in enumerate(zip(("Fₓ", "Fᵧ"), (fx, fy))):
+    for j, (name, force) in enumerate(zip(("F?", "F?"), (fx, fy))):
         fq, pw = spectrum(tr[late], force[late])
         axes[0, 1].plot(fq, pw, color=COLORS[j], label=name)
-    axes[0, 1].set(xlim=(0, .8), title="Late reaction spectrum, t ≥ 400",
-                   xlabel="Frequency (U∞ / D)", ylabel="Relative spectral power")
+    axes[0, 1].set(xlim=(0, .8), title="Late reaction spectrum, t = 400",
+                   xlabel="Frequency (U8 / D)", ylabel="Relative spectral power")
     axes[0, 1].legend(frameon=False)
     for j, i in enumerate(probe_ids[:4]):
         axes[1, 1].plot(t, fields[:, i, 1], color=(COLORS+["#8158a2"])[j], label=str(probes[j]))
     axes[1, 1].set(title="Crossflow velocity at four probe locations",
-                   xlabel="t U∞ / D", ylabel="v / U∞")
+                   xlabel="t U8 / D", ylabel="v / U8")
     axes[1, 1].legend(frameon=False, fontsize=8, ncol=2)
     for ax in axes[:, 1]:
         ax.grid()
@@ -451,14 +451,14 @@ def main():
         axes[0].plot([row["gap_over_period"] for row in baseline.values()],
                      [row["relative_l2_percent"][j] for row in baseline.values()],
                      marker="o", color=COLORS[j], label=label)
-    axes[0].set(xlabel="Observation gap / shedding period", ylabel="Relative L² error (%)",
+    axes[0].set(xlabel="Observation gap / shedding period", ylabel="Relative L� error (%)",
                 title="Dense-space linear time interpolation")
     axes[0].legend(frameon=False)
     axes[0].grid()
     dd = np.array(div_rms)
     axes[1].plot(dd[:, 0], dd[:, 1], color=COLORS[0], label="Full domain")
     axes[1].plot(dd[:, 0], dd[:, 2], color=COLORS[1], label="Near body + wake")
-    axes[1].set(xlabel="t U∞ / D", ylabel="Area-weighted RMS", title="Divergence from linear triangle gradients")
+    axes[1].set(xlabel="t U8 / D", ylabel="Area-weighted RMS", title="Divergence from linear triangle gradients")
     axes[1].legend(frameon=False)
     axes[1].grid()
     save(fig, "diagnostics.png")
@@ -466,6 +466,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
 
 

@@ -68,3 +68,6 @@ pythontex-files-*/
 
 ## Uncomment the line below if you do NOT want to track compiled PDFs in Git
 # *.pdf
+__pycache__/
+*.py[cod]
+
