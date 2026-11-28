@@ -71,3 +71,5 @@ pythontex-files-*/
 __pycache__/
 *.py[cod]
 
+## Protect the data
+proprietary_data/*
